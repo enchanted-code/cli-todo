@@ -40,18 +40,36 @@ void read_todos() {
   }
 }
 
+/**
+  gets input from stdin, handling buffer overflows
+  and removing the newline from end of input.
+
+  @param str - the char array to store input
+  @param n - the max length of input (including final null-character)
+*/
+void get_stdin_line(char *str, int n) {
+  fgets(str, n, stdin);
+  int last_i = strlen(str) - 1;
+  int ch;
+  // handle the line being to long
+  if (str[last_i] != '\n') {
+    while (((ch = getchar()) != '\n') && (ch != EOF)) {
+    }
+    str[last_i] = '\n';
+  }
+  // remove newline \n
+  str[last_i] = 0;
+}
+
 void interactive_add() {
   // define variables
   char title[100];
   char due_date[12];
   // get inputs from user
   printf("Title: ");
-  fgets(title, 100, stdin);
+  get_stdin_line(title, 100);
   printf("Due Date: ");
-  fgets(due_date, 12, stdin);
-  // remove \n from strings
-  title[strlen(title) - 1] = 0;
-  due_date[strlen(due_date) - 1] = 0;
+  get_stdin_line(due_date, 12);
   // write the todo to file
   write_todo(title, due_date);
 }
@@ -61,9 +79,7 @@ void interactive_read() { read_todos(); }
 void interactive_mode() {
   char menu_choice[3];
   printf("(a)dd, (r)ead: ");
-  fgets(menu_choice, 3, stdin);
-  menu_choice[strlen(menu_choice) - 1] = 0;
-
+  get_stdin_line(menu_choice, 3);
   if (strcmp(menu_choice, "a") == 0) {
     interactive_add();
   } else if (strcmp(menu_choice, "r") == 0) {
