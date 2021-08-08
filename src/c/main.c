@@ -24,7 +24,23 @@ void write_todo(char *title, char *due_date) {
   fclose(fp);
 }
 
-void interactive_mode() {
+void read_todos() {
+  FILE *fp;
+  char *line = NULL;
+  size_t len = 0;
+  ssize_t read;
+  fp = fopen(TODO_FP, "r");
+
+  if (fp == NULL) {
+    exit(EXIT_FAILURE);
+  }
+
+  while ((read = getline(&line, &len, fp)) != -1) {
+    printf("%s", line);
+  }
+}
+
+void interactive_add() {
   // define variables
   char title[100];
   char due_date[12];
@@ -38,6 +54,24 @@ void interactive_mode() {
   due_date[strlen(due_date) - 1] = 0;
   // write the todo to file
   write_todo(title, due_date);
+}
+
+void interactive_read() { read_todos(); }
+
+void interactive_mode() {
+  char menu_choice[3];
+  printf("(a)dd, (r)ead: ");
+  fgets(menu_choice, 3, stdin);
+  menu_choice[strlen(menu_choice) - 1] = 0;
+
+  if (strcmp(menu_choice, "a") == 0) {
+    interactive_add();
+  } else if (strcmp(menu_choice, "r") == 0) {
+    interactive_read();
+  } else {
+    printf("%s %s", "Unknown choice:", menu_choice);
+    exit(EXIT_FAILURE);
+  }
 }
 
 int main(int argc, char *argv[]) {
