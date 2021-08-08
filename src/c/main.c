@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,10 +10,24 @@ void show_no_args_message() {
   exit(EXIT_FAILURE);
 }
 
+void show_invalid_args_message() {
+  fprintf(stderr, "Invalid arguments supplied. Use --help.");
+  exit(EXIT_FAILURE);
+}
+
+void show_missing_args_message() {
+  fprintf(stderr, "Missing required arguments. Use --help.");
+  exit(EXIT_FAILURE);
+}
+
 void show_help_message() {
   puts("Todo cli written in C, by Leo Spratt");
   puts("Usage:");
   puts("\t(-i --interactive) open in interactive mode");
+  puts("\t(-a --add) add a todo");
+  puts("\t\t--title=\"<title>\" the title");
+  puts("\t\t--due=\"<yyyy-mm-dd>\" the due date");
+  puts("\t\t(-s --silent) don't show output on success");
   puts("\t(-h --help) show this message");
   puts("Configure:");
   puts("\t TODO_FILENAME where the todo file will be");
@@ -93,6 +108,43 @@ void interactive_mode(char *todo_fp) {
   }
 }
 
+void command_add(int argc, char *argv[], char *todo_fp) {
+  // define variables
+  char *title;
+  char *due;
+  bool silent = false;
+  // process arguments
+  for (int i = 1; i < argc; i++) {
+    if (strncmp(argv[i], "--title=", 8) == 0) {
+      // reserve space for title
+      title = malloc(strlen(argv[i]));
+      // substring to get just value
+      strncpy(title, argv[i] + 8, strlen(argv[i]) - 1);
+    } else if (strncmp(argv[i], "--due=", 6) == 0) {
+      // reserve space for due
+      due = malloc(strlen(argv[i]));
+      // substring to get just value
+      strncpy(due, argv[i] + 6, strlen(argv[i]) - 1);
+    } else if (strcmp(argv[i], "-s") == 0 || strcmp(argv[i], "--silent") == 0) {
+      silent = true;
+    }
+  }
+  // make sure values are correct
+  if (title == NULL) {
+    show_missing_args_message();
+  }
+  if (due == NULL) {
+    due = "";
+  }
+  // output to give same format as "interactive mode"
+  if (!silent) {
+    printf("Title: %s\n", title);
+    printf("Date Due: %s\n", due);
+  }
+  // write to file
+  write_todo(title, due, todo_fp);
+}
+
 int main(int argc, char *argv[]) {
   char *todo_fp = getenv("TODO_FILENAME");
   if (!todo_fp) {
@@ -106,5 +158,12 @@ int main(int argc, char *argv[]) {
   } else if (strcmp(argv[1], "-i") == 0 ||
              strcmp(argv[1], "--interactive") == 0) {
     interactive_mode(todo_fp);
+  } else if (strcmp(argv[1], "-a") == 0 || strcmp(argv[1], "--add") == 0) {
+    command_add(argc, argv, todo_fp);
+  } else if (strcmp(argv[1], "-v") == 0 || strcmp(argv[1], "--view") == 0) {
+    interactive_read(todo_fp);
+  } else {
+    show_invalid_args_message();
   }
+  return 0;
 }
