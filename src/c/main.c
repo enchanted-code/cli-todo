@@ -28,6 +28,9 @@ void show_help_message() {
   puts("\t\t--title=\"<title>\" the title");
   puts("\t\t--due=\"<yyyy-mm-dd>\" the due date");
   puts("\t\t(-s --silent) don't show output on success");
+  puts("\t(-v --view) view todos");
+  puts("\t\t --all show all todos");
+  puts("\t\t --count show total count of todos");
   puts("\t(-h --help) show this message");
   puts("Configure:");
   puts("\t TODO_FILENAME where the todo file will be");
@@ -39,6 +42,26 @@ void write_todo(char *title, char *due_date, char *todo_fp) {
   fp = fopen(todo_fp, "a");
   fprintf(fp, "title=\"%s\",due_date=%s\n", title, due_date);
   fclose(fp);
+}
+
+int count_todos(char *todo_fp) {
+  FILE *fp;
+  char ch;
+  int line_count = 0;
+  fp = fopen(todo_fp, "r");
+
+  if (fp == NULL) {
+    fprintf(stderr, "Todo file not found.");
+    exit(EXIT_FAILURE);
+  }
+
+  while ((ch = fgetc(fp)) != EOF) {
+    if (ch == '\n') {
+      line_count++;
+    }
+  }
+  fclose(fp);
+  return line_count;
 }
 
 void read_todos(char *todo_fp) {
@@ -56,6 +79,7 @@ void read_todos(char *todo_fp) {
   while ((read = getline(&line, &len, fp)) != -1) {
     printf("%s", line);
   }
+  fclose(fp);
 }
 
 /**
@@ -92,7 +116,17 @@ void interactive_add(char *todo_fp) {
   write_todo(title, due_date, todo_fp);
 }
 
-void interactive_read(char *todo_fp) { read_todos(todo_fp); }
+void interactive_read(char *todo_fp) {
+  char menu_choice[3];
+  printf("(a)ll (c)ount: ");
+  get_stdin_line(menu_choice, 3);
+  if (strcmp(menu_choice, "a") == 0) {
+    read_todos(todo_fp);
+  } else if (strcmp(menu_choice, "c") == 0) {
+    int count = count_todos(todo_fp);
+    printf("%d\n", count);
+  }
+}
 
 void interactive_mode(char *todo_fp) {
   char menu_choice[3];
@@ -145,6 +179,27 @@ void command_add(int argc, char *argv[], char *todo_fp) {
   write_todo(title, due, todo_fp);
 }
 
+void command_view(int argc, char *argv[], char *todo_fp) {
+  bool count = false;
+  bool all = false;
+
+  for (int i = 1; i < argc; i++) {
+    if (strncmp(argv[i], "--count", 7) == 0) {
+      count = true;
+    } else if (strncmp(argv[i], "--all", 5) == 0) {
+      all = true;
+    }
+  }
+
+  if (count) {
+    int todo_count = count_todos(todo_fp);
+    printf("%d\n", todo_count);
+  }
+  if (all) {
+    read_todos(todo_fp);
+  }
+}
+
 int main(int argc, char *argv[]) {
   char *todo_fp = getenv("TODO_FILENAME");
   if (!todo_fp) {
@@ -161,7 +216,7 @@ int main(int argc, char *argv[]) {
   } else if (strcmp(argv[1], "-a") == 0 || strcmp(argv[1], "--add") == 0) {
     command_add(argc, argv, todo_fp);
   } else if (strcmp(argv[1], "-v") == 0 || strcmp(argv[1], "--view") == 0) {
-    interactive_read(todo_fp);
+    command_view(argc, argv, todo_fp);
   } else {
     show_invalid_args_message();
   }
