@@ -30,6 +30,8 @@ void show_help_message() {
   puts("\t\t(-s --silent) don't show output on success");
   puts("\t(-v --view) view todos");
   puts("\t\t --all show all todos");
+  puts("\t\t --one show one todo, use --line to choose which");
+  puts("\t\t --line=<int> select a specific line");
   puts("\t\t --count show total count of todos");
   puts("\t(-h --help) show this message");
   puts("Configure:");
@@ -82,6 +84,29 @@ void read_todos(char *todo_fp) {
   fclose(fp);
 }
 
+void read_todo(char *todo_fp, int n) {
+  FILE *fp;
+  char *line = NULL;
+  size_t len = 0;
+  ssize_t read;
+  int curr_line = 0;
+  fp = fopen(todo_fp, "r");
+
+  if (fp == NULL) {
+    fprintf(stderr, "Todo file not found.");
+    exit(EXIT_FAILURE);
+  }
+
+  while ((read = getline(&line, &len, fp)) != -1) {
+    if (curr_line == n) {
+      printf("%s", line);
+      break;
+    }
+    curr_line++;
+  }
+  fclose(fp);
+}
+
 /**
   gets input from stdin, handling buffer overflows
   and removing the newline from end of input.
@@ -118,10 +143,18 @@ void interactive_add(char *todo_fp) {
 
 void interactive_read(char *todo_fp) {
   char menu_choice[3];
-  printf("(a)ll (c)ount: ");
+  printf("(a)ll (o)ne (c)ount: ");
   get_stdin_line(menu_choice, 3);
   if (strcmp(menu_choice, "a") == 0) {
     read_todos(todo_fp);
+  } else if (strcmp(menu_choice, "o") == 0) {
+    int selected_line = 1;
+    printf("number: ");
+    scanf("%d", &selected_line);
+    // makes sure we are using 0
+    // indexed as users will start from one
+    selected_line--;
+    read_todo(todo_fp, selected_line);
   } else if (strcmp(menu_choice, "c") == 0) {
     int count = count_todos(todo_fp);
     printf("%d\n", count);
@@ -182,12 +215,22 @@ void command_add(int argc, char *argv[], char *todo_fp) {
 void command_view(int argc, char *argv[], char *todo_fp) {
   bool count = false;
   bool all = false;
+  bool one = false;
+  int selected_line = 0;
+  char *buffer;
 
   for (int i = 1; i < argc; i++) {
     if (strncmp(argv[i], "--count", 7) == 0) {
       count = true;
     } else if (strncmp(argv[i], "--all", 5) == 0) {
       all = true;
+    } else if (strncmp(argv[i], "--line=", 7) == 0) {
+      buffer = malloc(strlen(argv[i]));
+      strncpy(buffer, argv[i] + 7, strlen(argv[i]));
+      selected_line = atoi(buffer);
+      free(buffer);
+    } else if (strncmp(argv[i], "--one", 5) == 0) {
+      one = true;
     }
   }
 
@@ -197,6 +240,12 @@ void command_view(int argc, char *argv[], char *todo_fp) {
   }
   if (all) {
     read_todos(todo_fp);
+  } else if (one) {
+    if (selected_line != 0) {
+      // user want 1 indexed but we want 0 indexed;
+      selected_line--;
+    }
+    read_todo(todo_fp, selected_line);
   }
 }
 
