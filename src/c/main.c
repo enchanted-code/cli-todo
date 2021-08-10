@@ -4,6 +4,7 @@
 #include <string.h>
 
 #define DEFAULT_TODO_FP "todos.txt"
+#define TEMP_FILE_EXT ".tmp"
 
 void show_no_args_message() {
   fprintf(stderr, "Arguments need to be supplied. Use --help.");
@@ -33,10 +34,24 @@ void show_help_message() {
   puts("\t\t --one show one todo, use --line to choose which");
   puts("\t\t --line=<int> select a specific line");
   puts("\t\t --count show total count of todos");
+  puts("\t(-d --delete) remove a todo");
+  puts("\t\t--all remove all");
+  puts("\t\t--line=<int> remove a specific line");
   puts("\t(-h --help) show this message");
   puts("Configure:");
   puts("\t TODO_FILENAME where the todo file will be");
   exit(EXIT_SUCCESS);
+}
+
+void append_char(char *dest, char *src, char *to_append) {
+  strcpy(dest, src);
+  int src_len = strlen(src);
+  int total_len = src_len + strlen(to_append);
+  int append_i = 0;
+  for (int i = src_len; i < total_len + 1; i++) {
+    dest[i] = to_append[append_i];
+    append_i++;
+  }
 }
 
 void write_todo(char *title, char *due_date, char *todo_fp) {
@@ -44,6 +59,39 @@ void write_todo(char *title, char *due_date, char *todo_fp) {
   fp = fopen(todo_fp, "a");
   fprintf(fp, "title=\"%s\",due_date=%s\n", title, due_date);
   fclose(fp);
+}
+
+void delete_todo(int selected_line, char *todo_fp) {
+  FILE *source_f;
+  FILE *temp_f;
+  int line_count = 0;
+  char ch;
+  char temp_filename[strlen(todo_fp) + strlen(TEMP_FILE_EXT)];
+  // extend todo filename with .tmp extention
+  append_char(temp_filename, todo_fp, TEMP_FILE_EXT);
+  source_f = fopen(todo_fp, "r");
+  // make sure todo source exists
+  if (source_f == NULL) {
+    fprintf(stderr, "Todo file not found.");
+    exit(EXIT_FAILURE);
+  }
+  temp_f = fopen(temp_filename, "a");
+
+  // read from soure and write into temp
+  while ((ch = fgetc(source_f)) != EOF) {
+    if (line_count != selected_line) {
+      // we want anything other than the selected line
+      fprintf(temp_f, "%c", ch);
+    }
+    if (ch == '\n') {
+      line_count++;
+    }
+  }
+  fclose(source_f);
+  fclose(temp_f);
+  // replace source with the temp
+  remove(todo_fp);
+  rename(temp_filename, todo_fp);
 }
 
 int count_todos(char *todo_fp) {
@@ -161,14 +209,28 @@ void interactive_read(char *todo_fp) {
   }
 }
 
+void interactive_delete(char *todo_fp) {
+  int selected_line = 0;
+  printf("Number: ");
+  scanf("%d", &selected_line);
+  if (selected_line != 0) {
+    // makes sure we are using 0
+    // indexed as users will start from one
+    selected_line--;
+  }
+  delete_todo(selected_line, todo_fp);
+}
+
 void interactive_mode(char *todo_fp) {
   char menu_choice[3];
-  printf("(a)dd, (r)ead: ");
+  printf("(a)dd, (r)ead, (d)elete: ");
   get_stdin_line(menu_choice, 3);
   if (strcmp(menu_choice, "a") == 0) {
     interactive_add(todo_fp);
   } else if (strcmp(menu_choice, "r") == 0) {
     interactive_read(todo_fp);
+  } else if (strcmp(menu_choice, "d") == 0) {
+    interactive_delete(todo_fp);
   } else {
     printf("%s %s", "Unknown choice:", menu_choice);
     exit(EXIT_FAILURE);
@@ -249,6 +311,34 @@ void command_view(int argc, char *argv[], char *todo_fp) {
   }
 }
 
+void command_delete(int argc, char *argv[], char *todo_fp) {
+  bool all = false;
+  bool one = false;
+  int selected_line = 0;
+  char *buffer;
+
+  for (int i = 1; i < argc; i++) {
+    if (strncmp(argv[i], "--all", 5) == 0) {
+      all = true;
+    } else if (strncmp(argv[i], "--line=", 7) == 0) {
+      buffer = malloc(strlen(argv[i]));
+      strncpy(buffer, argv[i] + 7, strlen(argv[i]));
+      selected_line = atoi(buffer);
+      free(buffer);
+      one = true;
+    }
+  }
+  if (all) {
+    // TODO implement deleting all todos
+  } else if (one) {
+    if (selected_line != 0) {
+      // user want 1 indexed but we want 0 indexed;
+      selected_line--;
+    }
+    delete_todo(selected_line, todo_fp);
+  }
+}
+
 int main(int argc, char *argv[]) {
   char *todo_fp = getenv("TODO_FILENAME");
   if (!todo_fp) {
@@ -266,6 +356,8 @@ int main(int argc, char *argv[]) {
     command_add(argc, argv, todo_fp);
   } else if (strcmp(argv[1], "-v") == 0 || strcmp(argv[1], "--view") == 0) {
     command_view(argc, argv, todo_fp);
+  } else if (strcmp(argv[1], "-d") == 0 || strcmp(argv[1], "--delete") == 0) {
+    command_delete(argc, argv, todo_fp);
   } else {
     show_invalid_args_message();
   }
