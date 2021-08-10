@@ -5,6 +5,26 @@ This project is meant to illustrate writing a todo program in different programm
 
 Each version should have the same interface, *Depending on each language's feature set*. They also should not need any other external libraries.
 
+## Program Usage
+### Command Flags/Arguments
+- `(-i --interactive)` open in interactive mode
+- `(-a --add)` add a todo
+    - `--title=<str>`the title
+    - `--due=<yyyy-mm-dd>` add a due date
+    - `-s --silent` don't show output on success
+- `(-v --view)` view todos
+    - `--all` show all todos
+    - `--one` show one todo
+    - `--line=<int>` select a specific line
+    - `--count` count total todos
+- `(-d --delete)` remove a todo
+    - `--all` remove all
+    - `--line=<int>` remove a specific line
+- `(-h --help)` show this message
+
+### Environment Variables
+- `TODO_FILENAME` where the todo file is located
+
 ## Current Languages
 - C
 
