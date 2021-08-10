@@ -61,6 +61,14 @@ void write_todo(char *title, char *due_date, char *todo_fp) {
   fclose(fp);
 }
 
+void delete_todos(char *todo_fp, bool recreate_file) {
+  remove(todo_fp);
+  if (recreate_file) {
+    FILE *fp = fopen(todo_fp, "w");
+    fclose(fp);
+  }
+}
+
 void delete_todo(int selected_line, char *todo_fp) {
   FILE *source_f;
   FILE *temp_f;
@@ -197,7 +205,7 @@ void interactive_read(char *todo_fp) {
     read_todos(todo_fp);
   } else if (strcmp(menu_choice, "o") == 0) {
     int selected_line = 1;
-    printf("number: ");
+    printf("Number: ");
     scanf("%d", &selected_line);
     // makes sure we are using 0
     // indexed as users will start from one
@@ -210,15 +218,26 @@ void interactive_read(char *todo_fp) {
 }
 
 void interactive_delete(char *todo_fp) {
+  char menu_choice[3];
   int selected_line = 0;
-  printf("Number: ");
-  scanf("%d", &selected_line);
-  if (selected_line != 0) {
-    // makes sure we are using 0
-    // indexed as users will start from one
-    selected_line--;
+  printf("(a)ll (o)ne: ");
+  get_stdin_line(menu_choice, 3);
+  if (strcmp(menu_choice, "a") == 0) {
+    delete_todos(todo_fp, true);
+  } else if (strcmp(menu_choice, "o") == 0) {
+    printf("Number: ");
+    scanf("%d", &selected_line);
+    if (selected_line != 0) {
+      // makes sure we are using 0
+      // indexed as users will start from one
+      selected_line--;
+    }
+    delete_todo(selected_line, todo_fp);
+
+  } else {
+    printf("%s %s", "Unknown choice:", menu_choice);
+    exit(EXIT_FAILURE);
   }
-  delete_todo(selected_line, todo_fp);
 }
 
 void interactive_mode(char *todo_fp) {
@@ -329,7 +348,7 @@ void command_delete(int argc, char *argv[], char *todo_fp) {
     }
   }
   if (all) {
-    // TODO implement deleting all todos
+    delete_todos(todo_fp, true);
   } else if (one) {
     if (selected_line != 0) {
       // user want 1 indexed but we want 0 indexed;
