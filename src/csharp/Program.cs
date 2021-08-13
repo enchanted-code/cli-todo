@@ -29,6 +29,18 @@ namespace csharp
                 case "--interactive":
                     interactive_mode(todo_fn);
                     break;
+                case "-a":
+                case "--add":
+                    command_add(args, todo_fn);
+                    break;
+                case "-v":
+                case "--view":
+                    command_view(args, todo_fn);
+                    break;
+                case "-d":
+                case "--delete":
+                    command_delete(args, todo_fn);
+                    break;
                 default:
                     show_invalid_args_message();
                     break;
@@ -252,8 +264,94 @@ namespace csharp
                 Environment.Exit(1);
             }
         }
-        static private void command_add_() { }
-        static private void command_view() { }
-        static private void command_delete() { }
+        static private void command_add(string[] args, string todo_fp)
+        {
+            string title = null, dueString = null;
+            bool silent = false;
+            foreach (var argValue in args)
+            {
+                if (argValue.StartsWith("--title="))
+                {
+                    title = argValue.Substring(8);
+                }
+                else if (argValue.StartsWith("--due="))
+                {
+                    dueString = argValue.Substring(6);
+                }
+                else if (argValue == "-s" || argValue == "--silent")
+                {
+                    silent = true;
+                }
+            }
+            if (string.IsNullOrEmpty(title))
+            {
+                show_missing_args_message();
+            }
+            if (!string.IsNullOrEmpty(dueString))
+            {
+                DateTime dueDateTime;
+                CultureInfo provider = CultureInfo.InvariantCulture;
+                dueDateTime = DateTime.ParseExact(dueString, "%yyyy-%MM-%dd", provider);
+                write_todo(title, dueDateTime, todo_fp);
+            }
+            else
+            {
+                write_todo(title, todo_fp);
+            }
+            if (!silent)
+            {
+                Console.WriteLine("Title: {0}", title);
+                Console.WriteLine("Date Due: {0}", dueString);
+            }
+        }
+        static private void command_view(string[] args, string todo_fp)
+        {
+            bool showCount = false, showAll = false, showOne = false;
+            int selectedLine = 1;
+            foreach (var argValue in args)
+            {
+                if (argValue == "--count")
+                {
+                    showCount = true;
+                }
+                else if (argValue == "--all")
+                {
+                    showAll = true;
+                }
+                else if (argValue == "--one")
+                {
+                    showOne = true;
+                }
+                else if (argValue.StartsWith("--line="))
+                {
+                    selectedLine = int.Parse(argValue.Substring(7));
+                }
+            }
+            if (showCount) { Console.WriteLine(count_todos(todo_fp)); }
+            if (showAll) { read_todos(todo_fp); }
+            else if (showOne) { read_todo(selectedLine, todo_fp); }
+        }
+        static private void command_delete(string[] args, string todo_fp)
+        {
+            bool selectAll = false, selectOne = false;
+            int selectedLine = 1;
+            foreach (var argValue in args)
+            {
+                if (argValue == "--all")
+                {
+                    selectAll = true;
+                }
+                else if (argValue == "--one")
+                {
+                    selectOne = true;
+                }
+                else if (argValue.StartsWith("--line="))
+                {
+                    selectedLine = int.Parse(argValue.Substring(7));
+                }
+            }
+            if (selectAll) { delete_todos(todo_fp, true); }
+            else if (selectOne) { delete_todo(selectedLine, todo_fp); }
+        }
     }
 }
