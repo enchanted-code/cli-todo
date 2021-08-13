@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 
 namespace csharp
 {
@@ -58,12 +59,95 @@ namespace csharp
             Console.WriteLine("Configure:");
             Console.WriteLine("\t TODO_FILENAME where the todo file will be");
         }
-        static private void write_todo() { }
-        static private void read_todo() { }
-        static private void read_todos() { }
-        static private int count_todos() { return 0; }
-        static private void delete_todos() { }
-        static private void delete_todo() { }
+        static private void write_todo(string title, DateTime due_date, string todo_fp)
+        {
+            if (!File.Exists(todo_fp))
+            {
+                Console.Error.WriteLine("Todo file not found");
+                Environment.Exit(1);
+            }
+            string due_date_str = "";
+            if (due_date != null)
+            {
+                due_date_str = due_date.ToString("%yyyy-%MM-%dd");
+            }
+            File.AppendAllText(
+                todo_fp,
+                String.Format("title={0},due_date={1}\n", title, due_date_str)
+            );
+        }
+        static private void read_todos(string todo_fp)
+        {
+            if (!File.Exists(todo_fp))
+            {
+                Console.Error.WriteLine("Todo file not found");
+                Environment.Exit(1);
+            }
+            foreach (string line in File.ReadLines(todo_fp))
+            {
+                Console.WriteLine(line);
+            }
+        }
+        static private void read_todo(int selected_line, string todo_fp)
+        {
+            if (!File.Exists(todo_fp))
+            {
+                Console.Error.WriteLine("Todo file not found");
+                Environment.Exit(1);
+            }
+            int currLine = 1;
+            foreach (string line in File.ReadLines(todo_fp))
+            {
+                if (currLine == selected_line)
+                {
+                    Console.WriteLine(line);
+                    break;
+                }
+                currLine++;
+            }
+        }
+        static private int count_todos(string todo_fp)
+        {
+            if (!File.Exists(todo_fp))
+            {
+                Console.Error.WriteLine("Todo file not found");
+                Environment.Exit(1);
+            }
+            int currLine = 0;
+            foreach (string line in File.ReadLines(todo_fp))
+            {
+                currLine++;
+            }
+            return currLine;
+        }
+        static private void delete_todos(string todo_fp, bool create_new_file)
+        {
+            File.Delete(todo_fp);
+            if (create_new_file)
+            {
+                File.Create(todo_fp);
+            }
+        }
+        static private void delete_todo(int selected_line, string todo_fp)
+        {
+            if (!File.Exists(todo_fp))
+            {
+                Console.Error.WriteLine("Todo file not found");
+                Environment.Exit(1);
+            }
+            string tempPath = todo_fp + TEMP_FILE_EXT;
+            int currLine = 1;
+            foreach (string line in File.ReadLines(todo_fp))
+            {
+                if (currLine != selected_line)
+                {
+                    File.AppendAllText(tempPath, line);
+                }
+                currLine++;
+            }
+            File.Delete(todo_fp);
+            File.Move(tempPath, todo_fp);
+        }
         static private void interactive_add() { }
         static private void interactive_read() { }
         static private void interactive_delete() { }
