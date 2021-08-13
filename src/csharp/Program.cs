@@ -19,17 +19,19 @@ namespace csharp
             {
                 show_no_args_message();
             }
-            if (args[0] == "-h" || args[0] == "--help")
+            switch (args[0])
             {
-                show_help_message();
-            }
-            else if (args[0] == "-i" || args[0] == "--interactive")
-            {
-                interactive_mode(todo_fn);
-            }
-            else
-            {
-                show_invalid_args_message();
+                case "-h":
+                case "--help":
+                    show_help_message();
+                    break;
+                case "-i":
+                case "--interactive":
+                    interactive_mode(todo_fn);
+                    break;
+                default:
+                    show_invalid_args_message();
+                    break;
             }
         }
         static private void show_no_args_message()
