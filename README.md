@@ -27,6 +27,8 @@ Each version should have the same interface, *Depending on each language's featu
 
 ## Current Languages
 - C
+- C#
+- Python
 
 ## License
 Copyright (C) 2021  Leo Spratt
